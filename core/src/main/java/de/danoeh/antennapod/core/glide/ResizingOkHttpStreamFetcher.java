@@ -3,13 +3,12 @@ package de.danoeh.antennapod.core.glide;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.integration.okhttp3.OkHttpStreamFetcher;
 import com.bumptech.glide.load.model.GlideUrl;
+import com.google.android.exoplayer2.util.Log;
 import okhttp3.Call;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -23,7 +22,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class ResizingOkHttpStreamFetcher extends OkHttpStreamFetcher {
-    private static final String TAG = "ResizingOkHttpStreamFet";
+    private static final String TAG = "ResizingOkHttpStreamFetcher";
     private static final int MAX_DIMENSIONS = 1500;
     private static final int MAX_FILE_SIZE = 1024 * 1024; // 1 MB
 

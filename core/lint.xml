@@ -8,8 +8,4 @@
     <issue id="MissingDefaultResource">
         <ignore path="**/values-**/strings.xml" />
     </issue>
-
-    <issue id="UnusedResources" severity="error">
-        <ignore path="**/values-**/strings.xml" />
-    </issue>
 </lint>

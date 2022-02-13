@@ -5,11 +5,11 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.StringRes;
 
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.core.storage.DownloadRequester;
 
 public class CancelDownloadActionButton extends ItemActionButton {
 
@@ -32,9 +32,9 @@ public class CancelDownloadActionButton extends ItemActionButton {
     @Override
     public void onClick(Context context) {
         FeedMedia media = item.getMedia();
-        DownloadService.cancel(context, media.getDownload_url());
+        DownloadRequester.getInstance().cancelDownload(context, media);
         if (UserPreferences.isEnableAutodownload()) {
-            item.disableAutoDownload();
+            item.setAutoDownload(false);
             DBWriter.setFeedItem(item);
         }
     }

@@ -73,12 +73,7 @@ public class TypeGetter {
                                 throw new UnsupportedFeedtypeException(Type.INVALID, tag);
                         }
                     } else {
-                        try {
-                            eventType = xpp.next();
-                        } catch (RuntimeException e) {
-                            // Apparently this happens on some devices...
-                            throw new UnsupportedFeedtypeException("Unable to get type");
-                        }
+                        eventType = xpp.next();
                     }
                 }
             } catch (XmlPullParserException e) {

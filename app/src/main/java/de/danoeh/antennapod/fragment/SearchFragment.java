@@ -1,7 +1,5 @@
 package de.danoeh.antennapod.fragment;
 
-
-import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -11,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,10 +26,10 @@ import de.danoeh.antennapod.adapter.EpisodeItemListAdapter;
 import de.danoeh.antennapod.adapter.FeedSearchResultAdapter;
 import de.danoeh.antennapod.core.event.DownloadEvent;
 import de.danoeh.antennapod.core.event.DownloaderUpdate;
-import de.danoeh.antennapod.event.FeedItemEvent;
-import de.danoeh.antennapod.event.playback.PlaybackPositionEvent;
-import de.danoeh.antennapod.event.PlayerStatusEvent;
-import de.danoeh.antennapod.event.UnreadItemsUpdateEvent;
+import de.danoeh.antennapod.core.event.FeedItemEvent;
+import de.danoeh.antennapod.core.event.PlaybackPositionEvent;
+import de.danoeh.antennapod.core.event.PlayerStatusEvent;
+import de.danoeh.antennapod.core.event.UnreadItemsUpdateEvent;
 import de.danoeh.antennapod.model.feed.Feed;
 import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.core.storage.FeedSearcher;
@@ -156,22 +153,6 @@ public class SearchFragment extends Fragment {
         if (getArguments().getString(ARG_QUERY, null) != null) {
             search();
         }
-        searchView.setOnQueryTextFocusChangeListener((view, hasFocus) -> {
-            if (hasFocus) {
-                showInputMethod(view.findFocus());
-            }
-        });
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    InputMethodManager imm = (InputMethodManager)
-                            getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(recyclerView.getWindowToken(), 0);
-                }
-            }
-        });
         return layout;
     }
 
@@ -338,12 +319,5 @@ public class SearchFragment extends Fragment {
         List<FeedItem> items = FeedSearcher.searchFeedItems(getContext(), query, feed);
         List<Feed> feeds = FeedSearcher.searchFeeds(getContext(), query);
         return new Pair<>(items, feeds);
-    }
-    
-    private void showInputMethod(View view) {
-        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-            imm.showSoftInput(view, 0);
-        }
     }
 }

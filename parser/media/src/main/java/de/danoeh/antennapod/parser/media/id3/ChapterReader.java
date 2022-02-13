@@ -82,7 +82,7 @@ public class ChapterReader extends ID3Reader {
                 break;
             case FRAME_ID_PICTURE:
                 byte encoding = readByte();
-                String mime = readIsoStringNullTerminated(frameHeader.getSize());
+                String mime = readEncodedString(encoding, frameHeader.getSize());
                 byte type = readByte();
                 String description = readEncodedString(encoding, frameHeader.getSize());
                 Log.d(TAG, "Found apic: " + mime + "," + description);

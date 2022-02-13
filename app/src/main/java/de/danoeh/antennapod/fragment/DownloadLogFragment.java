@@ -29,6 +29,7 @@ import de.danoeh.antennapod.core.service.download.DownloadStatus;
 import de.danoeh.antennapod.core.service.download.Downloader;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.core.util.download.AutoUpdateManager;
 import de.danoeh.antennapod.model.feed.Feed;
 import de.danoeh.antennapod.model.feed.FeedItem;
@@ -107,12 +108,12 @@ public class DownloadLogFragment extends ListFragment {
         Object item = adapter.getItem(position);
         if (item instanceof Downloader) {
             DownloadRequest downloadRequest = ((Downloader) item).getDownloadRequest();
-            DownloadService.cancel(getContext(), downloadRequest.getSource());
+            DownloadRequester.getInstance().cancelDownload(getActivity(), downloadRequest.getSource());
 
             if (downloadRequest.getFeedfileType() == FeedMedia.FEEDFILETYPE_FEEDMEDIA) {
                 FeedMedia media = DBReader.getFeedMedia(downloadRequest.getFeedfileId());
                 FeedItem feedItem = media.getItem();
-                feedItem.disableAutoDownload();
+                feedItem.setAutoDownload(false);
                 DBWriter.setFeedItem(feedItem);
             }
         } else if (item instanceof DownloadStatus) {
@@ -195,7 +196,7 @@ public class DownloadLogFragment extends ListFragment {
     }
 
     private final MenuItemUtils.UpdateRefreshMenuItemChecker updateRefreshMenuItemChecker =
-            () -> DownloadService.isRunning && DownloadService.isDownloadingFeeds();
+            () -> DownloadService.isRunning && DownloadRequester.getInstance().isDownloadingFeeds();
 
     private void loadDownloadLog() {
         if (disposable != null) {

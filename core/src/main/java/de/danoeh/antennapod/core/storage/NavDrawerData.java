@@ -30,7 +30,7 @@ public class NavDrawerData {
 
     public abstract static class DrawerItem {
         public enum Type {
-            TAG, FEED
+            FOLDER, FEED
         }
 
         public final Type type;
@@ -55,14 +55,14 @@ public class NavDrawerData {
         public abstract int getCounter();
     }
 
-    public static class TagDrawerItem extends DrawerItem {
+    public static class FolderDrawerItem extends DrawerItem {
         public final List<DrawerItem> children = new ArrayList<>();
         public final String name;
         public boolean isOpen;
 
-        public TagDrawerItem(String name) {
+        public FolderDrawerItem(String name) {
             // Keep IDs >0 but make room for many feeds
-            super(DrawerItem.Type.TAG, Math.abs((long) name.hashCode()) << 20);
+            super(DrawerItem.Type.FOLDER, Math.abs((long) name.hashCode()) << 20);
             this.name = name;
         }
 

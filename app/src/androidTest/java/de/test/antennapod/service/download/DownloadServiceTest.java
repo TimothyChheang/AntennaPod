@@ -8,7 +8,6 @@ import androidx.core.util.Consumer;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import de.danoeh.antennapod.core.service.download.DownloadRequestCreator;
 import de.test.antennapod.EspressoTestUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
@@ -34,6 +33,7 @@ import de.danoeh.antennapod.core.service.download.DownloaderFactory;
 import de.danoeh.antennapod.core.service.download.StubDownloader;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.core.storage.DownloadRequester;
 
 import static de.test.antennapod.util.event.DownloadEventListener.withDownloadEventListener;
 import static de.test.antennapod.util.event.FeedItemEventListener.withFeedItemEventListener;
@@ -80,7 +80,7 @@ public class DownloadServiceTest {
     public void tearDown() throws Exception {
         DownloadService.setDownloaderFactory(origFactory);
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        DownloadService.cancelAll(context);
+        DownloadRequester.getInstance().cancelAllDownloads(context);
         context.stopService(new Intent(context, DownloadService.class));
         EspressoTestUtils.tryKillDownloadService();
     }
@@ -113,8 +113,8 @@ public class DownloadServiceTest {
                 assertFalse("The media in test should not yet been downloaded",
                         DBReader.getFeedMedia(testMedia11.getId()).isDownloaded());
 
-                DownloadService.download(InstrumentationRegistry.getInstrumentation().getTargetContext(), false,
-                        DownloadRequestCreator.create(testMedia11).build());
+                DownloadRequester.getInstance().downloadMedia(false, InstrumentationRegistry
+                        .getInstrumentation().getTargetContext(), true, testMedia11.getItem());
                 Awaitility.await()
                         .atMost(5000, TimeUnit.MILLISECONDS)
                         .until(() -> feedItemEventListener.getEvents().size() >= numEventsExpected);
@@ -158,8 +158,7 @@ public class DownloadServiceTest {
         }
 
         withFeedItemEventListener(feedItemEventListener -> {
-            DownloadService.download(InstrumentationRegistry.getInstrumentation().getTargetContext(), false,
-                    DownloadRequestCreator.create(testMedia11).build());
+            DownloadRequester.getInstance().downloadMedia(false, context, true, testMedia11.getItem());
             withDownloadEventListener(downloadEventListener ->
                     Awaitility.await("download is actually running")
                         .atMost(5000, TimeUnit.MILLISECONDS)
@@ -175,7 +174,7 @@ public class DownloadServiceTest {
                         .atMost(2000, TimeUnit.MILLISECONDS)
                         .until(() -> feedItemEventListener.getEvents().size() >= 1);
             }
-            DownloadService.cancel(context, testMedia11.getDownload_url());
+            DownloadRequester.getInstance().cancelDownload(context, testMedia11);
             final int totalNumEventsExpected = itemAlreadyInQueue ? 1 : 3;
             Awaitility.await("item dequeue event + download termination event")
                     .atMost(2000, TimeUnit.MILLISECONDS)

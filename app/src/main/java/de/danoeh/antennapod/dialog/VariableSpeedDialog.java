@@ -1,5 +1,6 @@
 package de.danoeh.antennapod.dialog;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,14 +15,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.snackbar.Snackbar;
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.event.playback.SpeedChangedEvent;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.util.playback.PlaybackController;
 import de.danoeh.antennapod.view.ItemOffsetDecoration;
 import de.danoeh.antennapod.view.PlaybackSpeedSeekBar;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -50,12 +47,22 @@ public class VariableSpeedDialog extends BottomSheetDialogFragment {
         super.onStart();
         controller = new PlaybackController(getActivity()) {
             @Override
+            public void onPlaybackSpeedChange() {
+                updateSpeed();
+            }
+
+            @Override
             public void loadMediaInfo() {
-                updateSpeed(new SpeedChangedEvent(controller.getCurrentPlaybackSpeedMultiplier()));
+                updateSpeed();
             }
         };
         controller.init();
-        EventBus.getDefault().register(this);
+        speedSeekBar.setController(controller);
+    }
+
+    private void updateSpeed() {
+        speedSeekBar.updateSpeed();
+        addCurrentSpeedChip.setText(speedFormat.format(controller.getCurrentPlaybackSpeedMultiplier()));
     }
 
     @Override
@@ -63,13 +70,6 @@ public class VariableSpeedDialog extends BottomSheetDialogFragment {
         super.onStop();
         controller.release();
         controller = null;
-        EventBus.getDefault().unregister(this);
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void updateSpeed(SpeedChangedEvent event) {
-        speedSeekBar.updateSpeed(event.getNewSpeed());
-        addCurrentSpeedChip.setText(speedFormat.format(event.getNewSpeed()));
     }
 
     @Nullable
@@ -78,11 +78,6 @@ public class VariableSpeedDialog extends BottomSheetDialogFragment {
                              @Nullable Bundle savedInstanceState) {
         View root = View.inflate(getContext(), R.layout.speed_select_dialog, null);
         speedSeekBar = root.findViewById(R.id.speed_seek_bar);
-        speedSeekBar.setProgressChangedListener(multiplier -> {
-            if (controller != null) {
-                controller.setPlaybackSpeed(multiplier);
-            }
-        });
         RecyclerView selectedSpeedsGrid = root.findViewById(R.id.selected_speeds_grid);
         selectedSpeedsGrid.setLayoutManager(new GridLayoutManager(getContext(), 3));
         selectedSpeedsGrid.addItemDecoration(new ItemOffsetDecoration(getContext(), 4));
@@ -117,7 +112,9 @@ public class VariableSpeedDialog extends BottomSheetDialogFragment {
         @NonNull
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             Chip chip = new Chip(getContext());
-            chip.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            if (Build.VERSION.SDK_INT >= 17) {
+                chip.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            }
             return new ViewHolder(chip);
         }
 

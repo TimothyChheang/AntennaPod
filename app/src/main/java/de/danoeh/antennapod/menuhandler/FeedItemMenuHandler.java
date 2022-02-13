@@ -13,12 +13,12 @@ import com.google.android.material.snackbar.Snackbar;
 
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
+import de.danoeh.antennapod.core.preferences.GpodnetPreferences;
 import de.danoeh.antennapod.core.preferences.PlaybackPreferences;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
 import de.danoeh.antennapod.core.storage.DBWriter;
-import de.danoeh.antennapod.core.sync.SynchronizationSettings;
-import de.danoeh.antennapod.core.sync.queue.SynchronizationQueueSink;
+import de.danoeh.antennapod.core.sync.SyncService;
 import de.danoeh.antennapod.core.util.FeedItemUtil;
 import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.core.util.ShareUtils;
@@ -120,7 +120,7 @@ public class FeedItemMenuHandler {
      * @return true if selectedItem is not null.
      */
     public static boolean onPrepareMenu(Menu menu, FeedItem selectedItem, int... excludeIds) {
-        if (menu == null || selectedItem == null) {
+        if (menu == null || selectedItem == null ) {
             return false;
         }
         boolean rc = onPrepareMenu(menu, selectedItem);
@@ -151,7 +151,7 @@ public class FeedItemMenuHandler {
         } else if (menuItemId == R.id.mark_read_item) {
             selectedItem.setPlayed(true);
             DBWriter.markItemPlayed(selectedItem, FeedItem.PLAYED, true);
-            if (SynchronizationSettings.isProviderConnected()) {
+            if (GpodnetPreferences.loggedIn()) {
                 FeedMedia media = selectedItem.getMedia();
                 // not all items have media, Gpodder only cares about those that do
                 if (media != null) {
@@ -161,17 +161,17 @@ public class FeedItemMenuHandler {
                             .position(media.getDuration() / 1000)
                             .total(media.getDuration() / 1000)
                             .build();
-                    SynchronizationQueueSink.enqueueEpisodeActionIfSynchronizationIsActive(context, actionPlay);
+                    SyncService.enqueueEpisodeAction(context, actionPlay);
                 }
             }
         } else if (menuItemId == R.id.mark_unread_item) {
             selectedItem.setPlayed(false);
             DBWriter.markItemPlayed(selectedItem, FeedItem.UNPLAYED, false);
-            if (selectedItem.getMedia() != null) {
+            if (GpodnetPreferences.loggedIn() && selectedItem.getMedia() != null) {
                 EpisodeAction actionNew = new EpisodeAction.Builder(selectedItem, EpisodeAction.NEW)
                         .currentTimestamp()
                         .build();
-                SynchronizationQueueSink.enqueueEpisodeActionIfSynchronizationIsActive(context, actionNew);
+                SyncService.enqueueEpisodeAction(context, actionNew);
             }
         } else if (menuItemId == R.id.add_to_queue_item) {
             DBWriter.addQueueItem(context, selectedItem);

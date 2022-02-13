@@ -19,6 +19,7 @@
             android:layout_width="@android:dimen/app_icon_size"
             android:layout_height="match_parent"
             android:contentDescription="@string/play_label"
+            android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
             android:layout_margin="12dp"
             android:background="?android:attr/selectableItemBackground"
@@ -30,7 +31,9 @@
             android:id="@+id/layout_left"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
+            android:layout_toLeftOf="@id/butPlay"
             android:layout_toStartOf="@id/butPlay"
             android:background="@android:color/transparent"
             android:gravity="fill_horizontal"
@@ -94,6 +97,7 @@
                         android:layout_height="36dp"
                         android:background="?android:attr/selectableItemBackground"
                         android:contentDescription="@string/rewind_label"
+                        android:layout_marginRight="2dp"
                         android:layout_marginEnd="2dp"
                         android:scaleType="fitXY"
                         android:src="@drawable/ic_widget_fast_rewind" />
@@ -104,6 +108,7 @@
                         android:layout_height="36dp"
                         android:background="?android:attr/selectableItemBackground"
                         android:contentDescription="@string/play_label"
+                        android:layout_marginRight="2dp"
                         android:layout_marginEnd="2dp"
                         android:scaleType="fitXY"
                         android:src="@drawable/ic_widget_play" />
@@ -114,6 +119,7 @@
                         android:layout_height="36dp"
                         android:background="?android:attr/selectableItemBackground"
                         android:contentDescription="@string/fast_forward_label"
+                        android:layout_marginRight="2dp"
                         android:layout_marginEnd="2dp"
                         android:scaleType="fitXY"
                         android:src="@drawable/ic_widget_fast_forward" />
@@ -124,6 +130,7 @@
                         android:layout_height="36dp"
                         android:background="?android:attr/selectableItemBackground"
                         android:contentDescription="@string/skip_episode_label"
+                        android:layout_marginRight="2dp"
                         android:layout_marginEnd="2dp"
                         android:scaleType="fitXY"
                         android:src="@drawable/ic_widget_skip" />

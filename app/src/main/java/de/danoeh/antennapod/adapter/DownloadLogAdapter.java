@@ -13,13 +13,14 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.ListFragment;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
+import de.danoeh.antennapod.core.dialog.DownloadRequestErrorDialogCreator;
 import de.danoeh.antennapod.core.service.download.DownloadRequest;
-import de.danoeh.antennapod.core.service.download.DownloadRequestCreator;
-import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.service.download.Downloader;
 import de.danoeh.antennapod.core.service.download.DownloadStatus;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBTasks;
+import de.danoeh.antennapod.core.storage.DownloadRequestException;
+import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.core.util.DownloadError;
 import de.danoeh.antennapod.model.feed.Feed;
 import de.danoeh.antennapod.model.feed.FeedMedia;
@@ -130,7 +131,11 @@ public class DownloadLogAdapter extends BaseAdapter {
                             Log.e(TAG, "Could not find feed for feed id: " + status.getFeedfileId());
                             return;
                         }
-                        DBTasks.forceRefreshFeed(context, feed, true);
+                        try {
+                            DBTasks.forceRefreshFeed(context, feed, true);
+                        } catch (DownloadRequestException e) {
+                            e.printStackTrace();
+                        }
                     });
                 } else if (status.getFeedfileType() == FeedMedia.FEEDFILETYPE_FEEDMEDIA) {
                     holder.secondaryActionButton.setOnClickListener(v -> {
@@ -140,9 +145,14 @@ public class DownloadLogAdapter extends BaseAdapter {
                             Log.e(TAG, "Could not find feed media for feed id: " + status.getFeedfileId());
                             return;
                         }
-                        DownloadService.download(context, true, DownloadRequestCreator.create(media).build());
-                        ((MainActivity) context).showSnackbarAbovePlayer(
-                                R.string.status_downloading_label, Toast.LENGTH_SHORT);
+                        try {
+                            DownloadRequester.getInstance().downloadMedia(context, true, media.getItem());
+                            ((MainActivity) context).showSnackbarAbovePlayer(
+                                    R.string.status_downloading_label, Toast.LENGTH_SHORT);
+                        } catch (DownloadRequestException e) {
+                            e.printStackTrace();
+                            DownloadRequestErrorDialogCreator.newRequestErrorDialog(context, e.getMessage());
+                        }
                     });
                 }
             }

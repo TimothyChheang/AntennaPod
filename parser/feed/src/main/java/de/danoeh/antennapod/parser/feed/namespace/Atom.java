@@ -13,7 +13,7 @@ import org.xml.sax.Attributes;
 import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.parser.feed.element.SyndElement;
-import de.danoeh.antennapod.parser.feed.util.MimeTypeUtils;
+import de.danoeh.antennapod.parser.feed.util.SyndTypeUtils;
 
 public class Atom extends Namespace {
     private static final String TAG = "NSAtom";
@@ -91,11 +91,15 @@ public class Atom extends Namespace {
                     } catch (NumberFormatException e) {
                         Log.d(TAG, "Length attribute could not be parsed.");
                     }
-                    String mimeType = MimeTypeUtils.getMimeType(attributes.getValue(LINK_TYPE), href);
+                    String type = attributes.getValue(LINK_TYPE);
+
+                    if (type == null) {
+                        type = SyndTypeUtils.getMimeTypeFromUrl(href);
+                    }
 
                     FeedItem currItem = state.getCurrentItem();
-                    if (MimeTypeUtils.isMediaFile(mimeType) && currItem != null && !currItem.hasMedia()) {
-                        currItem.setMedia(new FeedMedia(currItem, href, size, mimeType));
+                    if (SyndTypeUtils.enclosureTypeValid(type) && currItem != null && !currItem.hasMedia()) {
+                        currItem.setMedia(new FeedMedia(currItem, href, size, type));
                     }
                 } else if (LINK_REL_PAYMENT.equals(rel)) {
                     state.getCurrentItem().setPaymentLink(href);

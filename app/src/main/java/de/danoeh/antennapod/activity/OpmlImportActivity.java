@@ -1,6 +1,5 @@
 package de.danoeh.antennapod.activity;
 
-import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -16,9 +15,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,8 +25,8 @@ import de.danoeh.antennapod.core.export.opml.OpmlElement;
 import de.danoeh.antennapod.core.export.opml.OpmlReader;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 
-import de.danoeh.antennapod.core.service.download.DownloadService;
-import de.danoeh.antennapod.core.service.download.DownloadRequestCreator;
+import de.danoeh.antennapod.core.storage.DownloadRequestException;
+import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.databinding.OpmlSelectionBinding;
 import de.danoeh.antennapod.model.feed.Feed;
 import io.reactivex.Completable;
@@ -38,6 +35,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -50,6 +48,7 @@ import java.util.List;
  * */
 public class OpmlImportActivity extends AppCompatActivity {
     private static final String TAG = "OpmlImportBaseActivity";
+    private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 5;
     @Nullable private Uri uri;
     OpmlSelectionBinding viewBinding;
     private ArrayAdapter<String> listAdapter;
@@ -89,6 +88,7 @@ public class OpmlImportActivity extends AppCompatActivity {
         viewBinding.butConfirm.setOnClickListener(v -> {
             viewBinding.progressBar.setVisibility(View.VISIBLE);
             Completable.fromAction(() -> {
+                DownloadRequester requester = DownloadRequester.getInstance();
                 SparseBooleanArray checked = viewBinding.feedlist.getCheckedItemPositions();
                 for (int i = 0; i < checked.size(); i++) {
                     if (!checked.valueAt(i)) {
@@ -96,7 +96,11 @@ public class OpmlImportActivity extends AppCompatActivity {
                     }
                     OpmlElement element = readElements.get(checked.keyAt(i));
                     Feed feed = new Feed(element.getXmlUrl(), null, element.getText());
-                    DownloadService.download(this, false, DownloadRequestCreator.create(feed).build());
+                    try {
+                        requester.downloadFeed(getApplicationContext(), feed);
+                    } catch (DownloadRequestException e) {
+                        e.printStackTrace();
+                    }
                 }
             })
                     .subscribeOn(Schedulers.io())
@@ -194,23 +198,27 @@ public class OpmlImportActivity extends AppCompatActivity {
     }
 
     private void requestPermission() {
-        requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE);
+        String[] permissions = { android.Manifest.permission.READ_EXTERNAL_STORAGE };
+        ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_READ_EXTERNAL_STORAGE);
     }
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    startImport();
-                } else {
-                    new AlertDialog.Builder(this)
-                            .setMessage(R.string.opml_import_ask_read_permission)
-                            .setPositiveButton(android.R.string.ok, (dialog, which) ->
-                                    requestPermission())
-                            .setNegativeButton(R.string.cancel_label, (dialog, which) ->
-                                    finish())
-                            .show();
-                }
-            });
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != PERMISSION_REQUEST_READ_EXTERNAL_STORAGE) {
+            return;
+        }
+        if (grantResults.length > 0 && ArrayUtils.contains(grantResults, PackageManager.PERMISSION_GRANTED)) {
+            startImport();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setMessage(R.string.opml_import_ask_read_permission)
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> requestPermission())
+                    .setNegativeButton(R.string.cancel_label, (dialog, which) -> finish())
+                    .show();
+        }
+    }
 
     /** Starts the import process. */
     private void startImport() {

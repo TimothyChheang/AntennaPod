@@ -1,8 +1,8 @@
 android {
-    compileSdkVersion 31
+    compileSdkVersion 30
 
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 16
         targetSdkVersion 30
 
         multiDexEnabled false
@@ -86,7 +86,7 @@ gradle.taskGraph.beforeTask { task ->
         task.doLast {
             def reportFile = task.project.file("build/reports/spotbugs/playDebug.xml")
             if (!reportFile.exists()) return
-            def slurped = new groovy.xml.XmlSlurper().parse(reportFile)
+            def slurped = new XmlSlurper().parse(reportFile)
 
             def foundErrors = false
             slurped['BugInstance'].each { bug ->

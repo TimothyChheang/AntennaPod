@@ -22,8 +22,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.widget.AppCompatDrawableManager;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -48,15 +49,16 @@ import java.util.Set;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.adapter.EpisodeItemListAdapter;
+import de.danoeh.antennapod.core.dialog.DownloadRequestErrorDialogCreator;
 import de.danoeh.antennapod.core.event.DownloadEvent;
 import de.danoeh.antennapod.core.event.DownloaderUpdate;
-import de.danoeh.antennapod.event.FavoritesEvent;
-import de.danoeh.antennapod.event.FeedItemEvent;
-import de.danoeh.antennapod.event.FeedListUpdateEvent;
-import de.danoeh.antennapod.event.playback.PlaybackPositionEvent;
-import de.danoeh.antennapod.event.PlayerStatusEvent;
-import de.danoeh.antennapod.event.QueueEvent;
-import de.danoeh.antennapod.event.UnreadItemsUpdateEvent;
+import de.danoeh.antennapod.core.event.FavoritesEvent;
+import de.danoeh.antennapod.core.event.FeedItemEvent;
+import de.danoeh.antennapod.core.event.FeedListUpdateEvent;
+import de.danoeh.antennapod.core.event.PlaybackPositionEvent;
+import de.danoeh.antennapod.core.event.PlayerStatusEvent;
+import de.danoeh.antennapod.core.event.QueueEvent;
+import de.danoeh.antennapod.core.event.UnreadItemsUpdateEvent;
 import de.danoeh.antennapod.core.feed.FeedEvent;
 import de.danoeh.antennapod.core.glide.ApGlideSettings;
 import de.danoeh.antennapod.core.glide.FastBlurTransformation;
@@ -64,12 +66,14 @@ import de.danoeh.antennapod.core.service.download.DownloadService;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBTasks;
 import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.core.storage.DownloadRequestException;
+import de.danoeh.antennapod.core.storage.DownloadRequester;
 import de.danoeh.antennapod.core.util.FeedItemPermutors;
 import de.danoeh.antennapod.core.util.FeedItemUtil;
 import de.danoeh.antennapod.core.util.gui.MoreContentListFooterUtil;
 import de.danoeh.antennapod.dialog.FilterDialog;
 import de.danoeh.antennapod.dialog.RemoveFeedDialog;
-import de.danoeh.antennapod.dialog.RenameItemDialog;
+import de.danoeh.antennapod.dialog.RenameFeedDialog;
 import de.danoeh.antennapod.fragment.swipeactions.SwipeActions;
 import de.danoeh.antennapod.fragment.actions.EpisodeMultiSelectActionHandler;
 import de.danoeh.antennapod.menuhandler.FeedItemMenuHandler;
@@ -84,8 +88,6 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import android.view.KeyEvent;
-import androidx.fragment.app.Fragment;
 
 /**
  * Displays a list of FeedItems.
@@ -185,13 +187,13 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
             @Override
             protected void doTint(Context themedContext) {
                 toolbar.getMenu().findItem(R.id.sort_items)
-                        .setIcon(AppCompatResources.getDrawable(themedContext, R.drawable.ic_sort));
+                        .setIcon(AppCompatDrawableManager.get().getDrawable(themedContext, R.drawable.ic_sort));
                 toolbar.getMenu().findItem(R.id.filter_items)
-                        .setIcon(AppCompatResources.getDrawable(themedContext, R.drawable.ic_filter));
+                        .setIcon(AppCompatDrawableManager.get().getDrawable(themedContext, R.drawable.ic_filter));
                 toolbar.getMenu().findItem(R.id.refresh_item)
-                        .setIcon(AppCompatResources.getDrawable(themedContext, R.drawable.ic_refresh));
+                        .setIcon(AppCompatDrawableManager.get().getDrawable(themedContext, R.drawable.ic_refresh));
                 toolbar.getMenu().findItem(R.id.action_search)
-                        .setIcon(AppCompatResources.getDrawable(themedContext, R.drawable.ic_search));
+                        .setIcon(AppCompatDrawableManager.get().getDrawable(themedContext, R.drawable.ic_search));
             }
         };
         iconTintManager.updateTint();
@@ -200,7 +202,12 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         nextPageLoader = new MoreContentListFooterUtil(root.findViewById(R.id.more_content_list_footer));
         nextPageLoader.setClickListener(() -> {
             if (feed != null) {
-                DBTasks.loadNextPageOfFeed(getActivity(), feed, false);
+                try {
+                    DBTasks.loadNextPageOfFeed(getActivity(), feed, false);
+                } catch (DownloadRequestException e) {
+                    e.printStackTrace();
+                    DownloadRequestErrorDialogCreator.newRequestErrorDialog(getActivity(), e.getMessage());
+                }
             }
         });
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -218,7 +225,11 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         SwipeRefreshLayout swipeRefreshLayout = root.findViewById(R.id.swipeRefresh);
         swipeRefreshLayout.setDistanceToTriggerSync(getResources().getInteger(R.integer.swipe_refresh_distance));
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            DBTasks.forceRefreshFeed(requireContext(), feed, true);
+            try {
+                DBTasks.forceRefreshFeed(requireContext(), feed, true);
+            } catch (DownloadRequestException e) {
+                e.printStackTrace();
+            }
             new Handler(Looper.getMainLooper()).postDelayed(() -> swipeRefreshLayout.setRefreshing(false),
                     getResources().getInteger(R.integer.swipe_to_refresh_duration_in_ms));
         });
@@ -273,8 +284,12 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         super.onSaveInstanceState(outState);
     }
 
-    private final MenuItemUtils.UpdateRefreshMenuItemChecker updateRefreshMenuItemChecker =
-            () -> DownloadService.isRunning && DownloadService.isDownloadingFile(feed.getDownload_url());
+    private final MenuItemUtils.UpdateRefreshMenuItemChecker updateRefreshMenuItemChecker = new MenuItemUtils.UpdateRefreshMenuItemChecker() {
+        @Override
+        public boolean isRefreshing() {
+            return feed != null && DownloadService.isRunning && DownloadRequester.getInstance().isDownloadingFile(feed);
+        }
+    };
 
     private void refreshToolbarState() {
         if (feed == null) {
@@ -302,17 +317,24 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
                     R.string.please_wait_for_data, Toast.LENGTH_LONG);
             return true;
         }
-        boolean feedMenuHandled = FeedMenuHandler.onOptionsItemClicked(getActivity(), item, feed);
+        boolean feedMenuHandled;
+        try {
+            feedMenuHandled = FeedMenuHandler.onOptionsItemClicked(getActivity(), item, feed);
+        } catch (DownloadRequestException e) {
+            e.printStackTrace();
+            DownloadRequestErrorDialogCreator.newRequestErrorDialog(getActivity(), e.getMessage());
+            return true;
+        }
         if (feedMenuHandled) {
             return true;
         }
         final int itemId = item.getItemId();
         if (itemId == R.id.rename_item) {
-            new RenameItemDialog(getActivity(), feed).show();
+            new RenameFeedDialog(getActivity(), feed).show();
             return true;
         } else if (itemId == R.id.remove_item) {
-            ((MainActivity) getActivity()).loadFragment(EpisodesFragment.TAG, null);
-            RemoveFeedDialog.show(getContext(), feed);
+            RemoveFeedDialog.show(getContext(), feed, () ->
+                    ((MainActivity) getActivity()).loadFragment(EpisodesFragment.TAG, null));
             return true;
         } else if (itemId == R.id.action_search) {
             ((MainActivity) getActivity()).loadChildFragment(SearchFragment.newInstance(feed.getId(), feed.getTitle()));
@@ -456,10 +478,10 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         if (isUpdatingFeed != updateRefreshMenuItemChecker.isRefreshing()) {
             refreshToolbarState();
         }
-        if (!DownloadService.isDownloadingFeeds()) {
+        if (!DownloadRequester.getInstance().isDownloadingFeeds()) {
             nextPageLoader.getRoot().setVisibility(View.GONE);
         }
-        nextPageLoader.setLoadingState(DownloadService.isDownloadingFeeds());
+        nextPageLoader.setLoadingState(DownloadRequester.getInstance().isDownloadingFeeds());
     }
 
     private void displayList() {
@@ -620,23 +642,6 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
             feed.setItems(feedItems);
         }
         return feed;
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onKeyUp(KeyEvent event) {
-        if (!isAdded() || !isVisible() || !isMenuVisible()) {
-            return;
-        }
-        switch (event.getKeyCode()) {
-            case KeyEvent.KEYCODE_T:
-                recyclerView.smoothScrollToPosition(0);
-                break;
-            case KeyEvent.KEYCODE_B:
-                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
-                break;
-            default:
-                break;
-        }
     }
 
     private static class FeedItemListAdapter extends EpisodeItemListAdapter {

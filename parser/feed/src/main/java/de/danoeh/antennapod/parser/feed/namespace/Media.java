@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.parser.feed.element.AtomText;
-import de.danoeh.antennapod.parser.feed.util.MimeTypeUtils;
+import de.danoeh.antennapod.parser.feed.util.SyndTypeUtils;
 
 /** Processes tags from the http://search.yahoo.com/mrss/ namespace. */
 public class Media extends Namespace {
@@ -43,28 +43,33 @@ public class Media extends Namespace {
                                           Attributes attributes) {
         if (CONTENT.equals(localName)) {
             String url = attributes.getValue(DOWNLOAD_URL);
+            String type = attributes.getValue(MIME_TYPE);
             String defaultStr = attributes.getValue(DEFAULT);
             String medium = attributes.getValue(MEDIUM);
             boolean validTypeMedia = false;
             boolean validTypeImage = false;
             boolean isDefault = "true".equals(defaultStr);
-            String mimeType = MimeTypeUtils.getMimeType(attributes.getValue(MIME_TYPE), url);
+            String guessedType = SyndTypeUtils.getMimeTypeFromUrl(url);
 
             if (MEDIUM_AUDIO.equals(medium)) {
                 validTypeMedia = true;
-                mimeType = "audio/*";
+                type = "audio/*";
             } else if (MEDIUM_VIDEO.equals(medium)) {
                 validTypeMedia = true;
-                mimeType = "video/*";
-            } else if (MEDIUM_IMAGE.equals(medium) && (mimeType == null
-                    || (!mimeType.startsWith("audio/") && !mimeType.startsWith("video/")))) {
+                type = "video/*";
+            } else if (MEDIUM_IMAGE.equals(medium) && (guessedType == null
+                    || (!guessedType.startsWith("audio/") && !guessedType.startsWith("video/")))) {
                 // Apparently, some publishers explicitly specify the audio file as an image
                 validTypeImage = true;
-                mimeType = "image/*";
+                type = "image/*";
             } else {
-                if (MimeTypeUtils.isMediaFile(mimeType)) {
+                if (type == null) {
+                    type = guessedType;
+                }
+
+                if (SyndTypeUtils.enclosureTypeValid(type)) {
                     validTypeMedia = true;
-                } else if (MimeTypeUtils.isImageFile(mimeType)) {
+                } else if (SyndTypeUtils.imageTypeValid(type)) {
                     validTypeImage = true;
                 }
             }
@@ -89,7 +94,7 @@ public class Media extends Namespace {
                         Log.e(TAG, "Duration \"" + durationStr + "\" could not be parsed");
                     }
                 }
-                FeedMedia media = new FeedMedia(state.getCurrentItem(), url, size, mimeType);
+                FeedMedia media = new FeedMedia(state.getCurrentItem(), url, size, type);
                 if (durationMs > 0) {
                     media.setDuration(durationMs);
                 }

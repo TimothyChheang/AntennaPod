@@ -27,6 +27,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -37,7 +38,6 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.snackbar.Snackbar;
 
-import de.danoeh.antennapod.playback.cast.CastEnabledActivity;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.Validate;
 import org.greenrobot.eventbus.EventBus;
@@ -45,7 +45,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import de.danoeh.antennapod.R;
-import de.danoeh.antennapod.event.MessageEvent;
+import de.danoeh.antennapod.core.event.MessageEvent;
 import de.danoeh.antennapod.core.preferences.UserPreferences;
 import de.danoeh.antennapod.core.receiver.MediaButtonReceiver;
 import de.danoeh.antennapod.core.service.playback.PlaybackService;
@@ -152,14 +152,14 @@ public class MainActivity extends CastEnabledActivity {
     }
 
     /**
-     * View.generateViewId stores the current ID in a static variable.
+     * ViewCompat.generateViewId stores the current ID in a static variable.
      * When the process is killed, the variable gets reset.
      * This makes sure that we do not get ID collisions
      * and therefore errors when trying to restore state from another view.
      */
     @SuppressWarnings("StatementWithEmptyBody")
     private void ensureGeneratedViewIdGreaterThan(int minimum) {
-        while (View.generateViewId() <= minimum) {
+        while (ViewCompat.generateViewId() <= minimum) {
             // Generate new IDs
         }
     }
@@ -167,7 +167,7 @@ public class MainActivity extends CastEnabledActivity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(KEY_GENERATED_VIEW_ID, View.generateViewId());
+        outState.putInt(KEY_GENERATED_VIEW_ID, ViewCompat.generateViewId());
     }
 
     private final BottomSheetBehavior.BottomSheetCallback bottomSheetCallback =
@@ -624,7 +624,6 @@ public class MainActivity extends CastEnabledActivity {
 
         AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         Integer customKeyCode = null;
-        EventBus.getDefault().post(event);
 
         switch (keyCode) {
             case KeyEvent.KEYCODE_P:

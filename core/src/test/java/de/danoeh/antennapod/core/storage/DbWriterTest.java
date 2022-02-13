@@ -188,13 +188,14 @@ public class DbWriterTest {
         assertTrue(queue.size() != 0);
 
         DBWriter.deleteFeedMediaOfItem(context, media.getId());
-        Awaitility.await().timeout(2, TimeUnit.SECONDS).until(() -> !dest.exists());
+        Awaitility.await().until(() -> !dest.exists());
         media = DBReader.getFeedMedia(media.getId());
         assertNotNull(media);
         assertFalse(dest.exists());
         assertFalse(media.isDownloaded());
         assertNull(media.getFile_url());
-        Awaitility.await().timeout(2, TimeUnit.SECONDS).until(() -> DBReader.getQueue().isEmpty());
+        queue = DBReader.getQueue();
+        assertEquals(0, queue.size());
     }
 
     @Test

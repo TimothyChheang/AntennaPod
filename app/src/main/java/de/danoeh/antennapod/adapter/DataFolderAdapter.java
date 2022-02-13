@@ -9,6 +9,7 @@ import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.core.util.Consumer;
 import androidx.recyclerview.widget.RecyclerView;
 import de.danoeh.antennapod.R;
@@ -73,7 +74,7 @@ public class DataFolderAdapter extends RecyclerView.Adapter<DataFolderAdapter.Vi
     }
 
     private List<StoragePath> getStorageEntries(Context context) {
-        File[] mediaDirs = context.getExternalFilesDirs(null);
+        File[] mediaDirs = ContextCompat.getExternalFilesDirs(context, null);
         final List<StoragePath> entries = new ArrayList<>(mediaDirs.length);
         for (File dir : mediaDirs) {
             if (!isWritable(dir)) {

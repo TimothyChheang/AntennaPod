@@ -3,7 +3,6 @@ package de.danoeh.antennapod.parser.feed.namespace;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.core.text.HtmlCompat;
 import de.danoeh.antennapod.parser.feed.HandlerState;
 import de.danoeh.antennapod.parser.feed.element.SyndElement;
 import de.danoeh.antennapod.parser.feed.util.DateUtils;
@@ -12,7 +11,7 @@ import org.xml.sax.Attributes;
 
 import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.model.feed.FeedMedia;
-import de.danoeh.antennapod.parser.feed.util.MimeTypeUtils;
+import de.danoeh.antennapod.parser.feed.util.SyndTypeUtils;
 
 import java.util.Locale;
 
@@ -40,18 +39,26 @@ public class Rss20 extends Namespace {
     private static final String ENC_TYPE = "type";
 
     @Override
-    public SyndElement handleElementStart(String localName, HandlerState state, Attributes attributes) {
-        if (ITEM.equals(localName) && CHANNEL.equals(state.getTagstack().lastElement().getName())) {
+    public SyndElement handleElementStart(String localName, HandlerState state,
+                                          Attributes attributes) {
+        if (ITEM.equals(localName)) {
             state.setCurrentItem(new FeedItem());
             state.getItems().add(state.getCurrentItem());
             state.getCurrentItem().setFeed(state.getFeed());
-        } else if (ENCLOSURE.equals(localName) && ITEM.equals(state.getTagstack().peek().getName())) {
+
+        } else if (ENCLOSURE.equals(localName)) {
+            String type = attributes.getValue(ENC_TYPE);
             String url = attributes.getValue(ENC_URL);
-            String mimeType = MimeTypeUtils.getMimeType(attributes.getValue(ENC_TYPE), url);
+
+            boolean validType = SyndTypeUtils.enclosureTypeValid(type);
+            if (!validType) {
+                type = SyndTypeUtils.getMimeTypeFromUrl(url);
+                validType = SyndTypeUtils.enclosureTypeValid(type);
+            }
 
             boolean validUrl = !TextUtils.isEmpty(url);
             if (state.getCurrentItem() != null && state.getCurrentItem().getMedia() == null
-                    && MimeTypeUtils.isMediaFile(mimeType) && validUrl) {
+                    && validType && validUrl) {
                 long size = 0;
                 try {
                     size = Long.parseLong(attributes.getValue(ENC_LEN));
@@ -62,9 +69,10 @@ public class Rss20 extends Namespace {
                 } catch (NumberFormatException e) {
                     Log.d(TAG, "Length attribute could not be parsed.");
                 }
-                FeedMedia media = new FeedMedia(state.getCurrentItem(), url, size, mimeType);
+                FeedMedia media = new FeedMedia(state.getCurrentItem(), url, size, type);
                 state.getCurrentItem().setMedia(media);
             }
+
         }
         return new SyndElement(localName, this);
     }
@@ -92,7 +100,6 @@ public class Rss20 extends Namespace {
         } else if (state.getTagstack().size() >= 2 && state.getContentBuf() != null) {
             String contentRaw = state.getContentBuf().toString();
             String content = SyndStringUtils.trimAllWhitespace(contentRaw);
-            String contentFromHtml = HtmlCompat.fromHtml(content, HtmlCompat.FROM_HTML_MODE_COMPACT).toString();
             SyndElement topElement = state.getTagstack().peek();
             String top = topElement.getName();
             SyndElement secondElement = state.getSecondTag();
@@ -109,9 +116,9 @@ public class Rss20 extends Namespace {
                 }
             } else if (TITLE.equals(top)) {
                 if (ITEM.equals(second) && state.getCurrentItem() != null) {
-                    state.getCurrentItem().setTitle(contentFromHtml);
+                    state.getCurrentItem().setTitle(content);
                 } else if (CHANNEL.equals(second) && state.getFeed() != null) {
-                    state.getFeed().setTitle(contentFromHtml);
+                    state.getFeed().setTitle(content);
                 }
             } else if (LINK.equals(top)) {
                 if (CHANNEL.equals(second) && state.getFeed() != null) {
@@ -128,9 +135,9 @@ public class Rss20 extends Namespace {
                 }
             } else if (DESCR.equals(localName)) {
                 if (CHANNEL.equals(second) && state.getFeed() != null) {
-                    state.getFeed().setDescription(contentFromHtml);
+                    state.getFeed().setDescription(content);
                 } else if (ITEM.equals(second) && state.getCurrentItem() != null) {
-                    state.getCurrentItem().setDescriptionIfLonger(contentFromHtml);
+                    state.getCurrentItem().setDescriptionIfLonger(content);
                 }
             } else if (LANGUAGE.equals(localName) && state.getFeed() != null) {
                 state.getFeed().setLanguage(content.toLowerCase(Locale.US));

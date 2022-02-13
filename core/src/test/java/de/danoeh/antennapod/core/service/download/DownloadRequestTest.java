@@ -3,12 +3,13 @@ package de.danoeh.antennapod.core.service.download;
 import android.os.Bundle;
 import android.os.Parcel;
 
-import de.danoeh.antennapod.model.feed.FeedMedia;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.ArrayList;
+
+import de.danoeh.antennapod.model.feed.FeedFile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -39,20 +40,25 @@ public class DownloadRequestTest {
         String destStr = "file://location/media.mp3";
         String username = "testUser";
         String password = "testPassword";
-        FeedMedia item = createFeedItem(1);
-        DownloadRequest request1 = new DownloadRequest.Builder(destStr, item)
+        FeedFile item = createFeedItem(1);
+        Bundle arg = new Bundle();
+        arg.putString("arg1", "value1");
+        DownloadRequest request1 = new DownloadRequest.Builder(destStr, item, true)
                 .deleteOnFailure(true)
                 .withAuthentication(username, password)
+                .withArguments(arg)
                 .build();
 
-        DownloadRequest request2 = new DownloadRequest.Builder(destStr, item)
+        DownloadRequest request2 = new DownloadRequest.Builder(destStr, item, true)
                 .deleteOnFailure(true)
                 .withAuthentication(username, password)
+                .withArguments(arg)
                 .build();
 
-        DownloadRequest request3 = new DownloadRequest.Builder(destStr, item)
+        DownloadRequest request3 = new DownloadRequest.Builder(destStr, item, true)
                 .deleteOnFailure(true)
                 .withAuthentication("diffUsername", "diffPassword")
+                .withArguments(arg)
                 .build();
 
         assertEquals(request1, request2);
@@ -67,13 +73,16 @@ public class DownloadRequestTest {
         ArrayList<DownloadRequest> toParcel;
         { // test DownloadRequests to parcel
             String destStr = "file://location/media.mp3";
-            FeedMedia item1 = createFeedItem(1);
-            DownloadRequest request1 = new DownloadRequest.Builder(destStr, item1)
+            FeedFile item1 = createFeedItem(1);
+            Bundle arg1 = new Bundle();
+            arg1.putString("arg1", "value1");
+            DownloadRequest request1 = new DownloadRequest.Builder(destStr, item1, false)
                     .withAuthentication(username1, password1)
+                    .withArguments(arg1)
                     .build();
 
-            FeedMedia item2 = createFeedItem(2);
-            DownloadRequest request2 = new DownloadRequest.Builder(destStr, item2)
+            FeedFile item2 = createFeedItem(2);
+            DownloadRequest request2 = new DownloadRequest.Builder(destStr, item2, true)
                     .withAuthentication(username2, password2)
                     .build();
 
@@ -117,8 +126,28 @@ public class DownloadRequestTest {
         return sb.toString();
     }
 
-    private FeedMedia createFeedItem(final int id) {
+    private FeedFile createFeedItem(final int id) {
         // Use mockito would be less verbose, but it'll take extra 1 second for this tiny test
-        return new FeedMedia(id, null, 0, 0, 0, "", "", "http://example.com/episode" + id, false, null, 0, 0);
+        return new FeedFile() {
+            @Override
+            public long getId() {
+                return id;
+            }
+
+            @Override
+            public String getDownload_url() {
+                return "http://example.com/episode" + id;
+            }
+
+            @Override
+            public int getTypeAsInt() {
+                return 0;
+            }
+
+            @Override
+            public String getHumanReadableIdentifier() {
+                return "human-id-" + id;
+            }
+        };
     }
 }
