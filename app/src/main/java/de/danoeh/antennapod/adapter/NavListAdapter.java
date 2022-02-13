@@ -3,12 +3,15 @@ package de.danoeh.antennapod.adapter;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.view.ContextMenu;
+import android.view.InputDevice;
 import android.view.LayoutInflater;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -194,10 +197,10 @@ public class NavListAdapter extends RecyclerView.Adapter<NavListAdapter.Holder>
             bindListItem(item, (FeedHolder) holder);
             if (item.type == NavDrawerData.DrawerItem.Type.FEED) {
                 bindFeedView((NavDrawerData.FeedDrawerItem) item, (FeedHolder) holder);
-                holder.itemView.setOnCreateContextMenuListener(itemAccess);
             } else {
-                bindFolderView((NavDrawerData.FolderDrawerItem) item, (FeedHolder) holder);
+                bindTagView((NavDrawerData.TagDrawerItem) item, (FeedHolder) holder);
             }
+            holder.itemView.setOnCreateContextMenuListener(itemAccess);
         }
         if (viewType != VIEW_TYPE_SECTION_DIVIDER) {
             TypedValue typedValue = new TypedValue();
@@ -208,6 +211,16 @@ public class NavListAdapter extends RecyclerView.Adapter<NavListAdapter.Holder>
 
             holder.itemView.setOnClickListener(v -> itemAccess.onItemClick(position));
             holder.itemView.setOnLongClickListener(v -> itemAccess.onItemLongClick(position));
+            holder.itemView.setOnTouchListener((v, e) -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (e.isFromSource(InputDevice.SOURCE_MOUSE)
+                            && e.getButtonState() == MotionEvent.BUTTON_SECONDARY) {
+                        itemAccess.onItemLongClick(position);
+                        return false;
+                    }
+                }
+                return false;
+            });
         }
     }
 
@@ -327,16 +340,16 @@ public class NavListAdapter extends RecyclerView.Adapter<NavListAdapter.Holder>
         }
     }
 
-    private void bindFolderView(NavDrawerData.FolderDrawerItem folder, FeedHolder holder) {
+    private void bindTagView(NavDrawerData.TagDrawerItem tag, FeedHolder holder) {
         Activity context = activity.get();
         if (context == null) {
             return;
         }
-        if (folder.isOpen) {
+        if (tag.isOpen) {
             holder.count.setVisibility(View.GONE);
         }
         Glide.with(context).clear(holder.image);
-        holder.image.setImageResource(R.drawable.ic_folder);
+        holder.image.setImageResource(R.drawable.ic_tag);
         holder.failure.setVisibility(View.GONE);
     }
 

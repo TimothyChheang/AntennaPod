@@ -1,6 +1,8 @@
 package de.danoeh.antennapod.fragment.preferences;
 
 import android.content.Intent;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,12 +19,11 @@ import de.danoeh.antennapod.core.util.IntentUtils;
 import de.danoeh.antennapod.fragment.preferences.about.AboutFragment;
 
 public class MainPreferencesFragment extends PreferenceFragmentCompat {
-    private static final String TAG = "MainPreferencesFragment";
 
     private static final String PREF_SCREEN_USER_INTERFACE = "prefScreenInterface";
     private static final String PREF_SCREEN_PLAYBACK = "prefScreenPlayback";
     private static final String PREF_SCREEN_NETWORK = "prefScreenNetwork";
-    private static final String PREF_SCREEN_GPODDER = "prefScreenGpodder";
+    private static final String PREF_SCREEN_SYNCHRONIZATION = "prefScreenSynchronization";
     private static final String PREF_SCREEN_STORAGE = "prefScreenStorage";
     private static final String PREF_DOCUMENTATION = "prefDocumentation";
     private static final String PREF_VIEW_FORUM = "prefViewForum";
@@ -43,15 +44,26 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
         // and afterwards remove the following lines. Please keep in mind that AntennaPod is licensed under the GPL.
         // This means that your application needs to be open-source under the GPL, too.
         // It must also include a prominent copyright notice.
-        String packageName = getContext().getPackageName();
-        if (!"de.danoeh.antennapod".equals(packageName) && !"de.danoeh.antennapod.debug".equals(packageName)) {
+        int packageHash = getContext().getPackageName().hashCode();
+        if (packageHash != 1790437538 && packageHash != -1190467065) {
             findPreference(PREF_CATEGORY_PROJECT).setVisible(false);
             Preference copyrightNotice = new Preference(getContext());
+            copyrightNotice.setIcon(R.drawable.ic_info_white);
+            copyrightNotice.getIcon().mutate()
+                    .setColorFilter(new PorterDuffColorFilter(0xffcc0000, PorterDuff.Mode.MULTIPLY));
             copyrightNotice.setSummary("This application is based on AntennaPod."
                     + " The AntennaPod team does NOT provide support for this unofficial version."
                     + " If you can read this message, the developers of this modification"
                     + " violate the GNU General Public License (GPL).");
             findPreference(PREF_CATEGORY_PROJECT).getParent().addPreference(copyrightNotice);
+        } else if (packageHash == -1190467065) {
+            Preference debugNotice = new Preference(getContext());
+            debugNotice.setIcon(R.drawable.ic_info_white);
+            debugNotice.getIcon().mutate()
+                    .setColorFilter(new PorterDuffColorFilter(0xffcc0000, PorterDuff.Mode.MULTIPLY));
+            debugNotice.setOrder(-1);
+            debugNotice.setSummary("This is a development version of AntennaPod and not meant for daily use");
+            findPreference(PREF_CATEGORY_PROJECT).getParent().addPreference(debugNotice);
         }
     }
 
@@ -74,8 +86,8 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
             ((PreferenceActivity) getActivity()).openScreen(R.xml.preferences_network);
             return true;
         });
-        findPreference(PREF_SCREEN_GPODDER).setOnPreferenceClickListener(preference -> {
-            ((PreferenceActivity) getActivity()).openScreen(R.xml.preferences_gpodder);
+        findPreference(PREF_SCREEN_SYNCHRONIZATION).setOnPreferenceClickListener(preference -> {
+            ((PreferenceActivity) getActivity()).openScreen(R.xml.preferences_synchronization);
             return true;
         });
         findPreference(PREF_SCREEN_STORAGE).setOnPreferenceClickListener(preference -> {
@@ -142,8 +154,8 @@ public class MainPreferencesFragment extends PreferenceFragmentCompat {
                 .addBreadcrumb(PreferenceActivity.getTitleOfPage(R.xml.preferences_network))
                 .addBreadcrumb(R.string.automation)
                 .addBreadcrumb(PreferenceActivity.getTitleOfPage(R.xml.preferences_autodownload));
-        config.index(R.xml.preferences_gpodder)
-                .addBreadcrumb(PreferenceActivity.getTitleOfPage(R.xml.preferences_gpodder));
+        config.index(R.xml.preferences_synchronization)
+                .addBreadcrumb(PreferenceActivity.getTitleOfPage(R.xml.preferences_synchronization));
         config.index(R.xml.preferences_notifications)
                 .addBreadcrumb(PreferenceActivity.getTitleOfPage(R.xml.preferences_notifications));
         config.index(R.xml.feed_settings)

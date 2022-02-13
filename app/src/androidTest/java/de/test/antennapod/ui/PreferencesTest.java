@@ -35,7 +35,9 @@ import de.test.antennapod.EspressoTestUtils;
 import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.action.ViewActions.swipeDown;
 import static androidx.test.espresso.action.ViewActions.swipeUp;
 import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
@@ -126,8 +128,9 @@ public class PreferencesTest {
         clickPreference(R.string.user_interface_label);
         String[] buttons = res.getStringArray(R.array.compact_notification_buttons_options);
         clickPreference(R.string.pref_compact_notification_buttons_title);
-        // First uncheck checkbox
-        onView(withText(buttons[2])).perform(click());
+        // First uncheck checkboxes
+        onView(withText(buttons[0])).perform(click());
+        onView(withText(buttons[1])).perform(click());
 
         // Now try to check all checkboxes
         onView(withText(buttons[0])).perform(click());
@@ -301,6 +304,7 @@ public class PreferencesTest {
         clickPreference(R.string.pref_parallel_downloads_title);
         onView(isRoot()).perform(waitForView(withClassName(endsWith("EditText")), 1000));
         onView(withClassName(endsWith("EditText"))).perform(replaceText("10"));
+        onView(withClassName(endsWith("EditText"))).perform(closeSoftKeyboard());
         onView(withText(android.R.string.ok)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> UserPreferences.getParallelDownloads() == 10);
@@ -390,7 +394,7 @@ public class PreferencesTest {
         clickPreference(R.string.network_pref);
         onView(withText(R.string.pref_automatic_download_title)).perform(click());
         onView(withText(R.string.pref_episode_cleanup_title)).perform(click());
-        onView(isRoot()).perform(waitForView(withText(R.string.episode_cleanup_except_favorite_removal), 1000));
+        onView(withId(R.id.select_dialog_listview)).perform(swipeDown());
         onView(withText(R.string.episode_cleanup_except_favorite_removal)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> UserPreferences.getEpisodeCleanupAlgorithm() instanceof ExceptFavoriteCleanupAlgorithm);
@@ -401,7 +405,7 @@ public class PreferencesTest {
         clickPreference(R.string.network_pref);
         onView(withText(R.string.pref_automatic_download_title)).perform(click());
         onView(withText(R.string.pref_episode_cleanup_title)).perform(click());
-        onView(isRoot()).perform(waitForView(withText(R.string.episode_cleanup_queue_removal), 1000));
+        onView(withId(R.id.select_dialog_listview)).perform(swipeDown());
         onView(withText(R.string.episode_cleanup_queue_removal)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> UserPreferences.getEpisodeCleanupAlgorithm() instanceof APQueueCleanupAlgorithm);
@@ -423,7 +427,7 @@ public class PreferencesTest {
         clickPreference(R.string.network_pref);
         onView(withText(R.string.pref_automatic_download_title)).perform(click());
         onView(withText(R.string.pref_episode_cleanup_title)).perform(click());
-        onView(isRoot()).perform(waitForView(withText(R.string.episode_cleanup_after_listening), 1000));
+        onView(withId(R.id.select_dialog_listview)).perform(swipeUp());
         onView(withText(R.string.episode_cleanup_after_listening)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> {
@@ -442,7 +446,7 @@ public class PreferencesTest {
         clickPreference(R.string.pref_automatic_download_title);
         clickPreference(R.string.pref_episode_cleanup_title);
         String search = res.getQuantityString(R.plurals.episode_cleanup_days_after_listening, 3, 3);
-        onView(isRoot()).perform(waitForView(withText(search), 1000));
+        onView(withText(search)).perform(scrollTo());
         onView(withText(search)).perform(click());
         Awaitility.await().atMost(1000, MILLISECONDS)
                 .until(() -> {
