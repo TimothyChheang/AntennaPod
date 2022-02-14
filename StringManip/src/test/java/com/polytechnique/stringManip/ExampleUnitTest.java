@@ -11,7 +11,15 @@ import static org.junit.Assert.*;
  */
 public class ExampleUnitTest {
     @Test
-    public void addition_isCorrect() {
-        assertEquals(4, 2 + 2);
+    public void reverse_isCorrect() {
+        String palindrome = "are we not pure no sir panamas moody noriega brags it is garbage irony dooms a man a prisoner up to new era".replaceAll(" ", "");
+        assertEquals(StringManip.getReverse(palindrome), palindrome);
+    }
+
+    @Test
+    public void hash_isCorrect() {
+        String string = "123456789";
+        String hash = String.valueOf(string.hashCode());
+        assertEquals(StringManip.getHash(string), hash);
     }
 }
