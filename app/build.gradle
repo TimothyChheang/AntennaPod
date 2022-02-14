@@ -120,7 +120,6 @@ dependencies {
     implementation project(':playback:cast')
     implementation project(':ui:app-start-intent')
     implementation project(':ui:common')
-    implementation project(path: ':StringManip')
 
     annotationProcessor "androidx.annotation:annotation:$annotationVersion"
     implementation "androidx.appcompat:appcompat:$appcompatVersion"

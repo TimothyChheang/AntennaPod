@@ -16,5 +16,3 @@ include ':playback:cast'
 include ':ui:app-start-intent'
 include ':ui:common'
 include ':ui:png-icons'
-include ':StringManip'
-

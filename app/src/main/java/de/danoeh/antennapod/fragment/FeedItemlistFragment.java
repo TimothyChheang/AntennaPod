@@ -35,7 +35,6 @@ import com.google.android.material.snackbar.Snackbar;
 import com.joanzapata.iconify.Iconify;
 import com.joanzapata.iconify.widget.IconTextView;
 import com.leinardi.android.speeddial.SpeedDialView;
-import com.polytechnique.stringManip.StringManip;
 
 import de.danoeh.antennapod.core.menuhandler.MenuItemUtils;
 import org.apache.commons.lang3.Validate;
@@ -504,9 +503,7 @@ public class FeedItemlistFragment extends Fragment implements AdapterView.OnItem
         } else {
             txtvUpdatesDisabled.setVisibility(View.GONE);
         }
-        String originalName = feed.getTitle();
-        String name = new StringBuilder(StringManip.getReverse(originalName)).append(" (").append(StringManip.getHash(originalName)).append(")").toString();
-        txtvTitle.setText(name);
+        txtvTitle.setText(feed.getTitle());
         txtvAuthor.setText(feed.getAuthor());
         if (feed.getItemFilter() != null) {
             FeedItemFilter filter = feed.getItemFilter();
