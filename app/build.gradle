@@ -173,8 +173,6 @@ dependencies {
     androidTestImplementation "androidx.test:runner:$runnerVersion"
     androidTestImplementation "androidx.test:rules:$rulesVersion"
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-
-    implementation "androidx.multidex:multidex:2.0.1"
 }
 
 if (project.hasProperty("antennaPodPlayPublisherCredentials")) {

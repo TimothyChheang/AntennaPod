@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
-public class StringManipUnitTests {
+public class ExampleUnitTest {
     @Test
     public void reverse_isCorrect() {
         String palindrome = "are we not pure no sir panamas moody noriega brags it is garbage irony dooms a man a prisoner up to new era".replaceAll(" ", "");
